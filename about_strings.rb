@@ -1,9 +1,6 @@
-# DISREGARD THIS FILE in merge error (From home PC)
+require File.expand_path(File.dirname(__FILE__) + '/neo')
 
-
-require File.expand_path(File.dirname(__FILE__) + '/edgecase')
-
-class AboutStrings < EdgeCase::Koan
+class AboutStrings < Neo::Koan
   def test_double_quoted_strings_are_strings
     string = "Hello, World"
     assert_equal true, string.is_a?(String)
@@ -16,12 +13,12 @@ class AboutStrings < EdgeCase::Koan
 
   def test_use_single_quotes_to_create_string_with_double_quotes
     string = 'He said, "Go Away."'
-    assert_equal string, string
+    assert_equal "He said, \"Go Away.\"", string
   end
 
   def test_use_double_quotes_to_create_strings_with_single_quotes
     string = "Don't"
-    assert_equal string, string
+    assert_equal "Don't", string
   end
 
   def test_use_backslash_for_those_hard_cases
@@ -30,7 +27,7 @@ class AboutStrings < EdgeCase::Koan
     assert_equal true, a == b
   end
 
-  def test_use_flexible_quoting_to_handle_really_hard_cases
+  def test_use_flexible_quoting_to_handle_really_hard_cases             # MC Note: Haven't seen this in other languages. Flexible quote can just contain stuff inside %(...)
     a = %(flexible quotes can handle both ' and " characters)
     b = %!flexible quotes can handle both ' and " characters!
     c = %{flexible quotes can handle both ' and " characters}
@@ -43,7 +40,9 @@ class AboutStrings < EdgeCase::Koan
 It was the best of times,
 It was the worst of times.
 }
-    assert_equal 54, long_string.size
+    assert_equal 54, long_string.length
+    assert_equal 3, long_string.lines.count
+    assert_equal "\n", long_string[0,1]
   end
 
   def test_here_documents_can_also_handle_multiple_lines
@@ -51,7 +50,9 @@ It was the worst of times.
 It was the best of times,
 It was the worst of times.
 EOS
-    assert_equal 53, long_string.size
+    assert_equal 53, long_string.length
+    assert_equal 2, long_string.lines.count
+    assert_equal "I", long_string[0,1]
   end
 
   def test_plus_will_concatenate_two_strings
@@ -82,7 +83,7 @@ EOS
     assert_equal "Hello, ", original_string
   end
 
-  def test_the_shovel_operator_will_also_append_content_to_a_string
+  def test_the_shovel_operator_will_also_append_content_to_a_string             # MC Note: << is called the 'shovel operator'
     hi = "Hello, "
     there = "World"
     hi << there
@@ -94,13 +95,21 @@ EOS
     original_string = "Hello, "
     hi = original_string
     there = "World"
-    hi << there
+    hi << there                                                        # Here we're pushing "World" also into original_string - interesting
     assert_equal "Hello, World", original_string
 
     # THINK ABOUT IT:
     #
     # Ruby programmers tend to favor the shovel operator (<<) over the
     # plus equals operator (+=) when building up strings.  Why?
+    #
+    #
+    #
+    # MC NOTE: from s/o:
+    #   << modifies the existing object in place, whereas += creates a new object.
+    #
+    #   Because it's faster / does not create a copy of the string <-> garbage collector does not need to run.
+
   end
 
   def test_double_quoted_string_interpret_escape_characters
@@ -144,24 +153,24 @@ EOS
 
   def test_you_can_get_a_single_character_from_a_string
     string = "Bacon, lettuce and tomato"
-    assert_equal 97, string[1]
+    assert_equal "a", string[1]
 
     # Surprised?
   end
 
   in_ruby_version("1.8") do
-    def test_in_ruby_1_8_single_characters_are_represented_by_integers
-      assert_equal 97, ?a
-      assert_equal true, ?a == 97
+    def test_in_older_ruby_single_characters_are_represented_by_integers
+      assert_equal __, ?a
+      assert_equal __, ?a == 97
 
-      assert_equal true, ?b == (?a + 1)
+      assert_equal __, ?b == (?a + 1)
     end
   end
 
-  in_ruby_version("1.9") do
-    def test_in_ruby_1_9_single_characters_are_represented_by_strings
-      assert_equal __, ?a
-      assert_equal __, ?a == 97
+  in_ruby_version("1.9", "2") do
+    def test_in_modern_ruby_single_characters_are_represented_by_strings
+      assert_equal 'a', ?a
+      assert_equal false, ?a == 97
     end
   end
 
@@ -186,7 +195,7 @@ EOS
     assert_equal "Now is the time", words.join(" ")
   end
 
-  def test_strings_are_not_unique_objects
+  def test_strings_are_unique_objects
     a = "a string"
     b = "a string"
 
